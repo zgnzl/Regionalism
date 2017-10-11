@@ -1,0 +1,6 @@
+E:\TeamFondationServers\Regionalism\Regionalism\obj\Debug\Regionalism.csprojResolveAssemblyReference.cache
+E:\TeamFondationServers\Regionalism\Regionalism\bin\Debug\Regionalism.exe.config
+E:\TeamFondationServers\Regionalism\Regionalism\bin\Debug\Regionalism.exe
+E:\TeamFondationServers\Regionalism\Regionalism\bin\Debug\Regionalism.pdb
+E:\TeamFondationServers\Regionalism\Regionalism\obj\Debug\Regionalism.exe
+E:\TeamFondationServers\Regionalism\Regionalism\obj\Debug\Regionalism.pdb

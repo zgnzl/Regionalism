@@ -1,0 +1,5 @@
+E:\TeamFondationServers\Regionalism\Regionalism\bin\Release\Regionalism.exe.config
+E:\TeamFondationServers\Regionalism\Regionalism\bin\Release\Regionalism.exe
+E:\TeamFondationServers\Regionalism\Regionalism\bin\Release\Regionalism.pdb
+E:\TeamFondationServers\Regionalism\Regionalism\obj\Release\Regionalism.exe
+E:\TeamFondationServers\Regionalism\Regionalism\obj\Release\Regionalism.pdb
