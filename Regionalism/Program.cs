@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.IO;
 using System.Net;
@@ -14,10 +15,16 @@ namespace Regionalism
         static List<Tuple<string, string, string, string>> regionlist = new List<Tuple<string, string, string, string>>();
         static int index = 0;
         static object _lock = new object();
-        static string currentName="";
+        static string currentName = "";
         static void Main(string[] args)
         {
+            DBToDB();
+            //Regionalism();
+            Console.ReadLine();
+        }
 
+        public static void Regionalism()
+        {
             GetListRegion("http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2016/index.html", "");
             // GetListRegion("http://www.stats.gov.cn/tjsj/tjbz/tjyqhdmhcxhfdm/2016/11/01/01/110101001.html");
             Console.WriteLine("行政区域抓取完成，共计：" + index);
@@ -38,14 +45,15 @@ namespace Regionalism
                     {
                         queryString = string.Format(queryString, item.Item1, item.Item3, item.Item2, string.IsNullOrEmpty(item.Item2) ? 0 : 1, string.IsNullOrEmpty(item.Item4) ? 0 : long.Parse(item.Item4));
                     }
-                    Console.WriteLine((ins++)+":"+item.Item3);
+                    Console.WriteLine((ins++) + ":" + item.Item3);
                     SqlCommand command = new SqlCommand(queryString, connection);
                     command.ExecuteNonQuery();
                 }
             }
+            connection.Close();
             Console.WriteLine("行政区域抓取完成，共计：" + ins);
-            Console.ReadLine();
         }
+
         public static void GetListRegion(string url, string parentid)
         {
             Console.ForegroundColor = ConsoleColor.Red;
@@ -139,7 +147,7 @@ namespace Regionalism
                         value = trstr[1].Substring(trstr[1].IndexOf(">") + 1, trstr[1].IndexOf("<") - trstr[1].IndexOf(">") - 1);
                     }
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine(currentName+":"+(index++) + "_" + href.Substring(href.LastIndexOf("/") + 1).Replace(".html", "") + ":" + value);
+                    Console.WriteLine(currentName + ":" + (index++) + "_" + href.Substring(href.LastIndexOf("/") + 1).Replace(".html", "") + ":" + value);
                     regionlist.Add(Tuple.Create(href, "", value, parentid));
                     InsertDB(regionlist[regionlist.Count - 1]);
                     if (maths[i].Value.Contains("href"))
@@ -205,5 +213,95 @@ namespace Regionalism
             }
         }
 
+
+        public static void DBToDB()
+        {
+            long count = 0;
+            SqlConnection connection = new SqlConnection("Server=192.168.107.100;uid=sa;pwd=cnki.sa123456;database=niezl;");
+            //(<Id, uniqueidentifier,>,< Name, nvarchar(50),> ,< Alias, nvarchar(200),>,< AreaClass, tinyint,>,< Parent_Id, uniqueidentifier,>,< Sort, int,> ,< Code, varchar(6),>,< Parent_Code, varchar(6),>,< CreateTime, datetime,>,< CreateUser, uniqueidentifier,>,< LastUpdateTime, datetime,> ,< LastUpdateUser, uniqueidentifier,>,< Remark, nvarchar(500),>,< IsDelete, bit,>)"
+            //(<Id,>,< Name,> ,< Alias>,< AreaClass, tinyint,>,< Parent_Id>,< Sort, int,> ,< Code>,< Parent_Code>,< CreateTime>,< CreateUser,>,< LastUpdateTime> ,< LastUpdateUser,>,< Remark, nvarchar(500),>,< IsDelete, bit,>)"
+            string insertsql = "INSERT INTO TB_AdministrativeRegion VALUES ('{0}','{1}',null,{2},'{3}',{4} ,{5},'{6}','{7}',null,null ,null,null,0)";
+            connection.Open();
+            SqlCommand cmd = new SqlCommand();
+            cmd.Connection = connection;
+            SqlDataAdapter adapter = new SqlDataAdapter();
+            cmd.CommandText = string.Format(insertsql, "2D6DACA1-4D91-B947-87CE-DDF5DB32F388", "中国", 0, "2D6DACA1-4D91-B947-87CE-DDF5DB32F386", 0, 86, "地球", DateTime.Now);
+            cmd.ExecuteNonQuery();
+            cmd.CommandText = "select * from CN_Regionalism where 父级代码=0";
+            DataSet ds = new DataSet();
+            adapter.SelectCommand = cmd;
+            adapter.Fill(ds); int index1 = 0; int index2 = 0; int index3 = 0;
+            foreach (DataRow item in ds.Tables[0].Rows)
+            {
+              
+                string id = Guid.NewGuid().ToString();
+                cmd.CommandText = string.Format(insertsql, id, item["区域名称"].ToString().Replace("办事处", "").Replace("建设管理委员会", "").Replace("居委会", ""), 1, "2D6DACA1-4D91-B947-87CE-DDF5DB32F388", index1++, item["区划代码"], 86, DateTime.Now);
+                cmd.ExecuteNonQuery();
+                Console.WriteLine((count++).ToString()+item["区域名称"]);
+                DataSet ds1 = new DataSet();
+                cmd.CommandText = "select * from CN_Regionalism where 父级代码=" + item["区划代码"];
+                adapter.SelectCommand = cmd;
+                adapter.Fill(ds1);
+                if (ds1.Tables[0].Rows.Count == 1 && ds1.Tables[0].Rows[0]["区域名称"].ToString().Trim() == "市辖区")
+                {
+                    cmd.CommandText = "select * from CN_Regionalism where 父级代码=" + ds1.Tables[0].Rows[0]["区划代码"];
+                    adapter.SelectCommand = cmd;
+                    adapter.Fill(ds1);
+                }
+                foreach (DataRow item1 in ds1.Tables[0].Rows)
+                {
+                   
+                    if (item1["区域名称"].ToString().Trim() == "市辖区")
+                    {
+                        continue;
+                    }
+                    string id1 = Guid.NewGuid().ToString();
+                    if (item1["区域名称"].ToString().Trim() == "省直辖县级行政区划")
+                    {
+                        DataSet ds2 = new DataSet();
+                        cmd.CommandText = "select * from CN_Regionalism where 父级代码=" + item1["区划代码"];
+                        adapter.SelectCommand = cmd;
+                        adapter.Fill(ds2);
+                        foreach (DataRow item2 in ds2.Tables[0].Rows)
+                        {
+                            string id1_1 = Guid.NewGuid().ToString();
+                            cmd.CommandText = string.Format(insertsql, id1_1, item2["区域名称"].ToString().Replace("办事处", "").Replace("建设管理委员会", "").Replace("居委会", ""), 2, id, index2++, item2["区划代码"], item["区划代码"], DateTime.Now);
+                            cmd.ExecuteNonQuery();
+                            Console.WriteLine((count++).ToString() + item2["区域名称"]);
+                            DataSet ds2_1 = new DataSet();
+                            cmd.CommandText = "select * from CN_Regionalism where 父级代码=" + item2["区划代码"];
+                            adapter.SelectCommand = cmd;
+                            adapter.Fill(ds2_1);
+                            foreach (DataRow item2_1 in ds2_1.Tables[0].Rows)
+                            {
+                                cmd.CommandText = string.Format(insertsql, Guid.NewGuid().ToString(), item2_1["区域名称"].ToString().Replace("办事处", "").Replace("建设管理委员会", "").Replace("居委会", ""), 3, id1_1, index3++, item2_1["区划代码"], item2["区划代码"], DateTime.Now);
+                                cmd.ExecuteNonQuery();
+                                Console.WriteLine((count++).ToString() + item2_1["区域名称"]);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        cmd.CommandText = string.Format(insertsql, id1, item1["区域名称"].ToString().Replace("办事处", "").Replace("建设管理委员会", "").Replace("居委会", ""), 2, id, index2++, item1["区划代码"], item["区划代码"], DateTime.Now);
+                        cmd.ExecuteNonQuery();
+                        cmd.CommandText = "select * from CN_Regionalism where 父级代码=" + item1["区划代码"];
+                        adapter.SelectCommand = cmd;
+                        DataSet ds2_2 = new DataSet();
+                        adapter.Fill(ds2_2);
+                        foreach (DataRow item2_2 in ds2_2.Tables[0].Rows)
+                        {
+                            cmd.CommandText = string.Format(insertsql, Guid.NewGuid().ToString(), item2_2["区域名称"].ToString().Replace("办事处","").Replace("建设管理委员会", "").Replace("居委会", ""), 3, id1, index3++, item2_2["区划代码"], item1["区划代码"], DateTime.Now);
+                            cmd.ExecuteNonQuery();
+                            Console.WriteLine((count++).ToString() + item2_2["区域名称"]);
+                        }
+                    }
+                   
+                    Console.WriteLine((count++).ToString() + item1["区域名称"]);
+                }
+
+            }
+
+            connection.Close();
+        }
     }
 }

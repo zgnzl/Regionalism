@@ -4,3 +4,5 @@ E:\TeamFondationServers\Regionalism\Regionalism\bin\Debug\Regionalism.exe
 E:\TeamFondationServers\Regionalism\Regionalism\bin\Debug\Regionalism.pdb
 E:\TeamFondationServers\Regionalism\Regionalism\obj\Debug\Regionalism.exe
 E:\TeamFondationServers\Regionalism\Regionalism\obj\Debug\Regionalism.pdb
+E:\TeamFondationServers\Regionalism\Regionalism\bin\Debug\DB\niezl.mdf
+E:\TeamFondationServers\Regionalism\Regionalism\bin\Debug\DB\niezl_log.ldf
